@@ -85,7 +85,7 @@ Action TUI::ProcessInputs(bool scroll) {
 }
 
 void TUI::PrintTopBar(std::string_view msg) {
-  std::cout << OVERSCAN_Y_LINES << OVERSCAN_X_SPACES << msg << std::endl << LINE;
+  std::cout << OVERSCAN_Y_LINES << OVERSCAN_X_SPACES << msg << std::endl << LINE << std::endl;
 }
 
 void TUI::PrintBottomBar(std::string_view msg) {

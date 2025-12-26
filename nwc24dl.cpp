@@ -3,27 +3,51 @@
 //
 
 #include "nwc24dl.h"
+
+#include <iostream>
+#include <cstring>
+#include <sys/unistd.h>
+
 #include "utils.h"
 
-constexpr const char CONFIG_PATH[] = "/shared2/wc24/nwc24dl.bin";
+constexpr char CONFIG_PATH[] = "/shared2/wc24/nwc24dl.bin";
 
-NWC24Dl::NWC24Dl()
-{
-  ReadDlList();
+NWC24Dl::NWC24Dl() {
+  m_data = std::make_unique<DLList>();
 }
 
-void NWC24Dl::ReadDlList()
+
+bool NWC24Dl::ReadDlList()
 {
-  u32 readSize;
-  void *fileBuffer = ISFS_GetFile(CONFIG_PATH, &readSize);
-  m_data = *(reinterpret_cast<DLList*>(fileBuffer));
+  m_file.resize(sizeof(DLList));
+
+  FSErr err = ISFS_GetFile(CONFIG_PATH, &m_file);
+  if (err.error_code != 0) {
+    return false;
+  }
+
+  std::memcpy(m_data.get(), m_file.data(), sizeof(DLList));
+  m_file.clear();
+  return true;
 }
+
+int NWC24Dl::GetNumberOfEntries() const {
+  int num{};
+
+  for (DLListEntry entry : m_data->entries) {
+    if (entry.type != UNUSED)
+      num++;
+  }
+
+  return num;
+}
+
 
 std::vector<std::string> NWC24Dl::GetDownloadURLs() const {
   std::vector<std::string> urls{};
 
-  for (DLListEntry entry : m_data.entries) {
-    if (entry.dl_url[0] != 0)
+  for (DLListEntry entry : m_data->entries) {
+    if (entry.type != UNUSED)
       urls.emplace_back(entry.dl_url);
   }
 
@@ -33,31 +57,37 @@ std::vector<std::string> NWC24Dl::GetDownloadURLs() const {
 std::vector<std::string> NWC24Dl::GetGameIDs() const {
   std::vector<std::string> ids{};
 
-  for (DLListEntry entry : m_data.entries) {
-    if (entry.dl_url[0] != 0)
+  for (DLListEntry entry : m_data->entries) {
+    if (entry.type != UNUSED)
       ids.emplace_back(entry.high_title_id);
   }
 
-
   return ids;
 }
 
-std::vector<u16> NWC24Dl::GetIndexes() const {
-  std::vector<u16> ids{};
+u16 NWC24Dl::GetIndex(int pos) const {
+  u16 ret{};
+  int i{};
 
-  for (DLListEntry entry : m_data.entries) {
-    if (entry.dl_url[0] != 0)
-      ids.emplace_back(entry.index);
+  for (DLListEntry entry : m_data->entries) {
+    if (entry.type != UNUSED) {
+      if (pos == i) {
+        ret = entry.index;
+        break;
+      }
+
+      i++;
+    }
   }
 
 
-  return ids;
+  return ret;
 }
 
-u32 NWC24Dl::GetBitMask(u16 entry_index) {
-  return m_data.entries[entry_index].subtask_bitmask;
+u32 NWC24Dl::GetBitMask(u16 entry_index) const {
+  return m_data->entries[entry_index].subtask_bitmask;
 }
 
-u32 NWC24Dl::GetFlags(u16 entry_index) {
-  return m_data.entries[entry_index].flags;
+u32 NWC24Dl::GetFlags(u16 entry_index) const {
+  return m_data->entries[entry_index].flags;
 }

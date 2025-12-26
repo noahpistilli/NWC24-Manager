@@ -3,12 +3,15 @@
 #include "tui.h"
 #include "nwc24dl.h"
 
-class DownloadModal : public TUI {
+class DownloadModal : protected TUI {
 public:
-    DownloadModal();
+    DownloadModal() = default;
+    ~DownloadModal() override = default;
     void Start() override;
-    void Download();
 
 private:
-    NWC24Dl* m_nwc24_dl = nullptr;
+    void Download();
+    bool ReloadList();
+
+    NWC24Dl m_nwc24dl{};
 };

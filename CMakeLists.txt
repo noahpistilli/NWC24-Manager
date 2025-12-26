@@ -36,4 +36,4 @@ add_executable(WiiConnect24_Downloader main.cpp
         nwc24.cpp
 )
 
-target_link_libraries(WiiConnect24_Downloader wiiuse bte fat ogc m patcher)
+target_link_libraries(WiiConnect24_Downloader wiiuse bte ogc m patcher)

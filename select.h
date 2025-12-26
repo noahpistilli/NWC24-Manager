@@ -3,9 +3,10 @@
 #include "tui.h"
 #include <vector>
 
-class SelectModal : public TUI {
+class SelectModal : protected TUI {
 public:
     SelectModal();
+    ~SelectModal() override = default;
 
     [[noreturn]] void Start() override;
 

@@ -1,70 +1,38 @@
+#include "utils.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <format>
 #include <gccore.h>
-#include "utils.h"
 
-static fstats stats ATTRIBUTE_ALIGN(32);
-constexpr s32 ISFS_EEXIST = -105;
-constexpr s32 ISFS_ENOENT = -106;
+FSErr ISFS_GetFile(std::string_view path, std::vector<u8>* file) {
+  FSErr err{};
 
-
-void *ISFS_GetFile(const char *path, u32 *size) {
-  *size = 0;
-
-  s32 fd = ISFS_Open(path, ISFS_OPEN_READ);
+  s32 fd = ISFS_Open(path.data(), ISFS_OPEN_READ);
   if (fd < 0) {
-    printf("ISFS_GetFile: unable to open file (error %d)\n", fd);
-    return nullptr;
+    err.error = std::format("ISFS_GetFile: unable to open file {} (error {})\n", path, fd);
+    err.error_code = fd;
+    return err;
   }
 
-  void *buf = nullptr;
-  memset(&stats, 0, sizeof(fstats));
-
-  s32 ret = ISFS_GetFileStats(fd, &stats);
-  if (ret >= 0) {
-    s32 length = stats.file_length;
-
-    // We must align our length by 32.
-    // memalign itself is dreadfully broken for unknown reasons.
-    s32 aligned_length = length;
-    s32 remainder = aligned_length % 32;
-    if (remainder != 0) {
-      aligned_length += 32 - remainder;
-    }
-
-    buf = aligned_alloc(32, aligned_length);
-
-    if (buf != nullptr) {
-      s32 tmp_size = ISFS_Read(fd, buf, length);
-
-      if (tmp_size == length) {
-        // We were successful.
-        *size = tmp_size;
-      } else {
-        // If positive, the file could not be fully read.
-        // If negative, it is most likely an underlying /dev/fs
-        // error.
-        if (tmp_size >= 0) {
-          printf("ISFS_GetFile: only able to read %d out of "
-                 "%d bytes!\n",
-                 tmp_size, length);
-        } else if (tmp_size == ISFS_ENOENT) {
-          // We ignore logging errors about files that do not exist.
-        } else {
-          printf("ISFS_GetFile: ISFS_Open failed! (error %d)\n",
-                 tmp_size);
-        }
-
-        free(buf);
-      }
+  // For all the files we are dealing with here, we are guarenteed to know the file size beforehand.
+  s32 tmp_size = ISFS_Read(fd, file->data(), file->size());
+  if (tmp_size != file->size()) {
+    // If positive, the file could not be fully read.
+    // If negative, it is most likely an underlying /dev/fs
+    // error.
+    if (tmp_size >= 0) {
+      err.error = std::format("ISFS_GetFile: only able to read {} out of {} bytes!", tmp_size, file->size());
+      err.error_code = tmp_size;
+    } else if (tmp_size == ISFS_ENOENT) {
+      err.error = std::format("ISFS_GetFile: file not found (error {})", tmp_size);
+      err.error_code = tmp_size;
     } else {
-      printf("ISFS_GetFile: failed to allocate buffer!\n");
+      err.error = std::format("ISFS_GetFile: ISFS_Open failed! (error {})", tmp_size);
+      err.error_code = tmp_size;
     }
-  } else {
-    printf("ISFS_GetFile: unable to retrieve file stats (error %d)\n", ret);
   }
   ISFS_Close(fd);
 
-  return buf;
+  return err;
 }

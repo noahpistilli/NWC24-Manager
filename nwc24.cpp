@@ -29,5 +29,5 @@ s32 NWC24::GetLastError() const
     return -1;
   }
 
-  return reinterpret_cast<s32 *>(io_buf)[2];
+  return static_cast<s32 *>(io_buf)[2];
 }

@@ -24,7 +24,8 @@ enum class Action {
 
 class TUI {
 protected:
-    virtual void Start() {};
+    virtual ~TUI() = default;
+    virtual void Start() {}
 
     Action ProcessInputs(bool scroll);
 

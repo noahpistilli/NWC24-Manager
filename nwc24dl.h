@@ -9,19 +9,21 @@
 #include <gccore.h>
 #include <vector>
 
+#include "utils.h"
+
 class NWC24Dl final
 {
 public:
-    explicit NWC24Dl();
-    void ReadDlList();
+    NWC24Dl();
 
+    bool ReadDlList();
 
     std::vector<std::string> GetDownloadURLs() const;
     std::vector<std::string> GetGameIDs() const;
-    std::vector<u16> GetIndexes() const;
-    u32 GetFlags(u16 entry_index);
-    u32 GetBitMask(u16 entry_index);
-
+    u16 GetIndex(int pos) const;
+    u32 GetFlags(u16 entry_index) const;
+    u32 GetBitMask(u16 entry_index) const;
+    int GetNumberOfEntries() const;
 
     static constexpr u32 MAX_ENTRIES = 120;
 
@@ -52,6 +54,7 @@ private:
         u16 max_entries;
         u8 reserved[106];
     };
+    static_assert(sizeof(DLListHeader) == 128);
 
     struct DLListRecord final
     {
@@ -61,6 +64,7 @@ private:
         u8 flags;
         u8 padding[3];
     };
+    static_assert(sizeof(DLListRecord) == 16);
 
     struct DLListEntry final
     {
@@ -91,6 +95,7 @@ private:
         u8 should_use_rootca;
         u16 unknown3;
     };
+    static_assert(sizeof(DLListEntry) == 512);
 
     struct DLList final
     {
@@ -98,7 +103,9 @@ private:
         DLListRecord records[MAX_ENTRIES];
         DLListEntry entries[MAX_ENTRIES];
     };
+    static_assert(sizeof(DLList) == 63488);
 #pragma pack(pop)
 
-    DLList m_data{};
+    std::unique_ptr<DLList> m_data = nullptr;
+    std::vector<u8> m_file{};
 };

@@ -1,17 +1,17 @@
 #include "download.h"
 #include "nwc24.h"
 #include <iostream>
+#include <sys/unistd.h>
 
-
-DownloadModal::DownloadModal() {
-  m_nwc24_dl = new NWC24Dl();
-  m_num_of_lines = static_cast<int>(m_nwc24_dl->GetDownloadURLs().size());
-}
 
 void DownloadModal::Start() {
-  auto urls = m_nwc24_dl->GetDownloadURLs();
-  auto ids = m_nwc24_dl->GetGameIDs();
-  auto indexes = m_nwc24_dl->GetIndexes();
+  bool success = ReloadList();
+  if (!success) {
+    WII_ReturnToMenu();
+  }
+
+  auto urls = m_nwc24dl.GetDownloadURLs();
+  auto ids = m_nwc24dl.GetGameIDs();
 
   for (int i = 0; true; i++) {
     if (i != 0 || m_num_of_lines != 1) {
@@ -38,22 +38,26 @@ void DownloadModal::Start() {
 }
 
 void DownloadModal::Download() {
-  auto ids = m_nwc24_dl->GetGameIDs();
-  auto indexes = m_nwc24_dl->GetIndexes();
-
   ClearScreen();
   PrintTopBar("Downloading File");
-  std::cout << "Downloading " << ids.at(m_index) << std::endl;
+
+  // It is possible that KD modified the list during the time it took the user to navigate to the task
+  // and select it. Reload every time.
+  bool success = ReloadList();
+  if (!success) {
+    WII_ReturnToMenu();
+  }
+
 
   void *io_buf = std::malloc(32);
   void *in_buf = std::malloc(32);
 
-  u16 _index = indexes.at(m_index);
-  u32 flags = m_nwc24_dl->GetFlags(_index);
-  u32 bitmask = m_nwc24_dl->GetBitMask(_index);
-  *(reinterpret_cast<u32*>(in_buf)) = flags;
-  *(reinterpret_cast<u16*>(in_buf) + 3) = _index;
-  *(reinterpret_cast<u32*>(in_buf) + 2) = bitmask;
+  u16 _index = m_nwc24dl.GetIndex(m_index);
+  u32 flags = m_nwc24dl.GetFlags(_index);
+  u32 bitmask = m_nwc24dl.GetBitMask(_index);
+  *(static_cast<u32*>(in_buf)) = flags;
+  *(static_cast<u16*>(in_buf) + 3) = _index;
+  *(static_cast<u32*>(in_buf) + 2) = bitmask;
 
   s32 _ret = NWC24::GetInstance().DoIoctl(NWC24::Command::DownloadNow, 32, in_buf, 32, io_buf);
   if (_ret < 0) {
@@ -68,7 +72,7 @@ void DownloadModal::Download() {
     }
   }
 
-  const s32 response = reinterpret_cast<s32 *>(io_buf)[0];
+  const s32 response = static_cast<s32 *>(io_buf)[0];
   if (response != 0)
   {
     const s32 wc24_error = NWC24::GetInstance().GetLastError();
@@ -91,7 +95,24 @@ void DownloadModal::Download() {
   while (true) {
     Action ret = ProcessInputs(true);
     if (ret == Action::B) {
+      success = ReloadList();
+      if (!success) {
+        WII_ReturnToMenu();
+      }
+
       return;
     }
   }
+}
+
+bool DownloadModal::ReloadList() {
+  bool success = m_nwc24dl.ReadDlList();
+  if (!success) {
+    std::cout << "Failed to read DL list" << std::endl;
+    sleep(5);
+    return false;
+  }
+
+  m_num_of_lines = m_nwc24dl.GetNumberOfEntries();
+  return true;
 }
