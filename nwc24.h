@@ -6,6 +6,7 @@
 class NWC24 final {
 public:
     enum class Command : s32 {
+        SaveMailNow = 13,
         DownloadNow = 14,
         GetSchedulerStat = 30,
     };

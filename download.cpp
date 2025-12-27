@@ -53,9 +53,8 @@ void DownloadModal::Download() {
   void *in_buf = std::malloc(32);
 
   u16 _index = m_nwc24dl.GetIndex(m_index);
-  u32 flags = m_nwc24dl.GetFlags(_index);
   u32 bitmask = m_nwc24dl.GetBitMask(_index);
-  *(static_cast<u32*>(in_buf)) = flags;
+  *(static_cast<u32*>(in_buf)) = 10;
   *(static_cast<u16*>(in_buf) + 3) = _index;
   *(static_cast<u32*>(in_buf) + 2) = bitmask;
 
@@ -76,8 +75,9 @@ void DownloadModal::Download() {
   if (response != 0)
   {
     const s32 wc24_error = NWC24::GetInstance().GetLastError();
-    std::cout << "An error has occurred in the patching process." << std::endl;
-    std::cout << wc24_error << std::endl;
+    std::cout << "An error has occurred in the downloading process." << std::endl;
+    std::cout << "NWC24 Error:" << wc24_error << std::endl;
+    std::cout << "KD return value:" << response << std::endl;
     PrintBottomBar("Press B to return");
 
     while (true) {
@@ -86,6 +86,43 @@ void DownloadModal::Download() {
         return;
       }
     }
+  }
+
+  free(io_buf);
+  free(in_buf);
+
+  if (m_nwc24dl.GetEntryType(_index) == NWC24Dl::MAIL) {
+    // If it is mail we need to call SaveMailNow
+    io_buf = std::malloc(32);
+    _ret = NWC24::GetInstance().DoIoctl(NWC24::Command::SaveMailNow, 0, nullptr, 32, io_buf);
+    if (_ret < 0) {
+      std::cout << "A fatal error has occurred in the WC24 device." << std::endl;
+      PrintBottomBar("Press B to return item");
+
+      while (true) {
+        Action ret = ProcessInputs(true);
+        if (ret == Action::B) {
+          return;
+        }
+      }
+    }
+
+    if (static_cast<s32 *>(io_buf)[0] != 0)
+    {
+      const s32 wc24_error = NWC24::GetInstance().GetLastError();
+      std::cout << "An error has occurred saving the mail." << std::endl;
+      std::cout << wc24_error << std::endl;
+      PrintBottomBar("Press B to return");
+
+      while (true) {
+        Action ret = ProcessInputs(true);
+        if (ret == Action::B) {
+          return;
+        }
+      }
+    }
+
+    free(io_buf);
   }
 
   std::cout << "Downloaded!" << std::endl;

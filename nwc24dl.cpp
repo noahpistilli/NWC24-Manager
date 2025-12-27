@@ -91,3 +91,8 @@ u32 NWC24Dl::GetBitMask(u16 entry_index) const {
 u32 NWC24Dl::GetFlags(u16 entry_index) const {
   return m_data->entries[entry_index].flags;
 }
+
+NWC24Dl::EntryType NWC24Dl::GetEntryType(u16 entry_index) const {
+  return m_data->entries[entry_index].type;
+}
+

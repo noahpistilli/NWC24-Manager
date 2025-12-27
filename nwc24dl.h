@@ -14,6 +14,14 @@
 class NWC24Dl final
 {
 public:
+    enum EntryType : u8
+    {
+        SUBTASK = 1,
+        MAIL,
+        CHANNEL_CONTENT,
+        UNUSED = 0xff
+    };
+
     NWC24Dl();
 
     bool ReadDlList();
@@ -23,6 +31,7 @@ public:
     u16 GetIndex(int pos) const;
     u32 GetFlags(u16 entry_index) const;
     u32 GetBitMask(u16 entry_index) const;
+    EntryType GetEntryType(u16 entry_index) const;
     int GetNumberOfEntries() const;
 
     static constexpr u32 MAX_ENTRIES = 120;
@@ -32,14 +41,6 @@ private:
     static constexpr u32 MAX_SUBENTRIES = 32;
     static constexpr u64 SECONDS_PER_MINUTE = 60;
     static constexpr u64 MINUTES_PER_DAY = 1440;
-
-    enum EntryType : u8
-    {
-        SUBTASK = 1,
-        MAIL,
-        CHANNEL_CONTENT,
-        UNUSED = 0xff
-    };
 
 #pragma pack(push, 1)
     // The following format is partially based off of https://wiibrew.org/wiki//dev/net/kd/request.
