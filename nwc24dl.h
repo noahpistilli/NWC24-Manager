@@ -108,5 +108,4 @@ private:
 #pragma pack(pop)
 
     std::unique_ptr<DLList> m_data = nullptr;
-    std::vector<u8> m_file{};
 };

@@ -11,4 +11,4 @@ struct FSErr {
 
 constexpr s32 ISFS_ENOENT = -106;
 
-FSErr ISFS_GetFile(std::string_view path, std::vector<u8>* file);
+FSErr ISFS_GetFile(std::string_view path, void* file, size_t size);

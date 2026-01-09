@@ -29,7 +29,7 @@ Action TUI::ProcessInputs(bool scroll) {
 
       return Action::None;
     }
-    else if (pressed & WPAD_BUTTON_UP || (!scroll && (pressed & WPAD_BUTTON_LEFT))) {
+    if (pressed & WPAD_BUTTON_UP || (!scroll && (pressed & WPAD_BUTTON_LEFT))) {
       m_index--;
 
       if (!scroll)
@@ -46,7 +46,7 @@ Action TUI::ProcessInputs(bool scroll) {
 
       return Action::None;
     }
-    else if (scroll && pressed & WPAD_BUTTON_LEFT) {
+    if (scroll && pressed & WPAD_BUTTON_LEFT) {
       m_index -= canDisplayAmount;
       m_offset -= canDisplayAmount;
       if (m_index < 0)
@@ -57,7 +57,7 @@ Action TUI::ProcessInputs(bool scroll) {
 
       return Action::None;
     }
-    else if (scroll && pressed & WPAD_BUTTON_RIGHT) {
+    if (scroll && pressed & WPAD_BUTTON_RIGHT) {
       m_index += canDisplayAmount;
       m_offset += canDisplayAmount;
 
@@ -69,14 +69,13 @@ Action TUI::ProcessInputs(bool scroll) {
 
       return Action::None;
     }
-
-    else if (pressed & WPAD_BUTTON_HOME) {
+    if (pressed & WPAD_BUTTON_HOME) {
       return Action::Home;
     }
-    else if (pressed & WPAD_BUTTON_A) {
+    if (pressed & WPAD_BUTTON_A) {
       return Action::A;
     }
-    else if (pressed & WPAD_BUTTON_B) {
+    if (pressed & WPAD_BUTTON_B) {
       return Action::B;
     }
   }

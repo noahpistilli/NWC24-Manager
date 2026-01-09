@@ -2,6 +2,8 @@
 #include <gccore.h>
 #include <wiiuse/wpad.h>
 #include <unistd.h>
+
+#include "download.h"
 #include "select.h"
 #include "nwc24.h"
 #include "nwc24dl.h"
@@ -40,6 +42,7 @@ int main() {
   WPAD_Init();
 
   NWC24::Init();
+  DownloadModal::Init();
 
   auto modal = SelectModal();
   modal.Start();

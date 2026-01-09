@@ -3,6 +3,11 @@
 #include <iostream>
 #include <sys/unistd.h>
 
+DownloadModal* DownloadModal::s_instance;
+
+void DownloadModal::Init() {
+  s_instance = new DownloadModal();
+}
 
 void DownloadModal::Start() {
   bool success = ReloadList();
@@ -13,26 +18,24 @@ void DownloadModal::Start() {
   auto urls = m_nwc24dl.GetDownloadURLs();
   auto ids = m_nwc24dl.GetGameIDs();
 
-  for (int i = 0; true; i++) {
-    if (i != 0 || m_num_of_lines != 1) {
-      ClearScreen();
-      PrintTopBar("Pick a channel to download");
+  while (true) {
+    ClearScreen();
+    PrintTopBar("Pick a channel to download");
 
-      int printable = MIN(25 - OVERSCAN_Y_TIMES_2, m_num_of_lines);
-      for (int j = m_offset; j < (m_offset + printable); j++) {
-        PrintCursor(j);
-        std::cout << ids.at(j) << ": " << urls.at(j) << std::endl;
-      }
-
-      PrintBottomBar("Press A to select an item");
+    int printable = MIN(25 - OVERSCAN_Y_TIMES_2, m_num_of_lines);
+    for (int j = m_offset; j < (m_offset + printable); j++) {
+      PrintCursor(j);
+      std::cout << ids.at(j) << ": " << urls.at(j) << std::endl;
     }
 
-    Action ret = (i == 0 && m_num_of_lines == 1) ? Action::A : ProcessInputs(true);
+    PrintBottomBar("Press A to select an item");
+
+    Action ret = ProcessInputs(true);
 
     if (ret == Action::A) {
       Download();
     } else if (ret == Action::B) {
-      return;
+      break;
     }
   }
 }

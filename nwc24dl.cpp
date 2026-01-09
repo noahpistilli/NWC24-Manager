@@ -19,15 +19,15 @@ NWC24Dl::NWC24Dl() {
 
 bool NWC24Dl::ReadDlList()
 {
-  m_file.resize(sizeof(DLList));
+  void* data = std::aligned_alloc(32, sizeof(DLList));
 
-  FSErr err = ISFS_GetFile(CONFIG_PATH, &m_file);
+  FSErr err = ISFS_GetFile(CONFIG_PATH, data, sizeof(DLList));
   if (err.error_code != 0) {
     return false;
   }
 
-  std::memcpy(m_data.get(), m_file.data(), sizeof(DLList));
-  m_file.clear();
+  std::memcpy(m_data.get(), data, sizeof(DLList));
+  std::free(data);
   return true;
 }
 
